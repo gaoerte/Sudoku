@@ -7,8 +7,8 @@ Sudoku::Sudoku(int min, int max) : _min(min), _max(max)
 	sec.resize(9);
 	count = 0;
 	cout << "创造一个数独：" << endl;
-	CreateASudoku();
-	/*fillSudoku(0, 7, 9);
+	//CreateASudoku();
+	fillSudoku(0, 7, 9);
 	fillSudoku(1, 6, 5);
 	fillSudoku(1, 4, 7);
 	fillSudoku(3, 1, 5);
@@ -27,7 +27,7 @@ Sudoku::Sudoku(int min, int max) : _min(min), _max(max)
 	fillSudoku(7, 8, 4);
 	fillSudoku(8, 0, 1);
 	fillSudoku(8, 4, 8);
-	fillSudoku(8, 8, 9);*/
+	fillSudoku(8, 8, 9);
 	displayBoard();
 }
 
@@ -66,9 +66,9 @@ bool Sudoku::dfs(int x, int y)
 
 	for (auto num : numbers) {
 		if (isvalid(x, y, num)) {
-			sudoku[x][y] = num;
+			fillSudoku(x, y, num);
 			if (dfs(x, y + 1)) return true;
-			sudoku[x][y] = 0;
+			deleteSudoku(x, y, num);
 		}
 	}
 	return false;
@@ -144,7 +144,7 @@ bool Sudoku::solvedfs(int x, int y) {
 }
 
 bool Sudoku::solveset(int x, int y) {
-	if (++count > 100000) {
+	if (++count > 1000000) {
 		flag = 2;
 		return false;
 	}
@@ -187,8 +187,8 @@ bool Sudoku::solve()
 {
 	cout << "其中一个解为：" << endl;
 	auto start = chrono::high_resolution_clock::now();
-	bool unsolved = !solvedfs(0, 0);
-	//bool unsolved = !solveset(0, 0);
+	//bool unsolved = !solvedfs(0, 0);
+	bool unsolved = !solveset(0, 0);
 	auto end = chrono::high_resolution_clock::now();
 	chrono::duration<double> elapsed = end - start;
 	cout << "Solving Elapsed time: " << elapsed.count() << " seconds." << endl;

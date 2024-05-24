@@ -3,14 +3,14 @@
 #include <array>
 #include <random>
 #include <chrono>
-#include <set>
+#include <unordered_set>
 using namespace std;
 
 class Sudoku
 {
 private:
 	array<array<int, 9>, 9> sudoku = { {0} };
-	vector<set<int>> row, col, sec;
+	vector<unordered_set<int>> row, col, sec;
 	bool dfs(int x, int y);
 	int _min, _max;
 	int count;
