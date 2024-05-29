@@ -1,7 +1,3 @@
-//
-// Created by sanshuifengyu on 2024/5/20.
-//
-
 #ifndef SUDOKU_DANCINGLINKS_H
 #define SUDOKU_DANCINGLINKS_H
 
@@ -10,161 +6,99 @@
 #include <random>
 #include<cstring>
 #include<algorithm>
+
 using namespace std;
+constexpr auto mx = 400000; //ÆäÊµ²»ÓÃÕâÃ´´óÖ»Òª´óÓÚ729*324¼´¿É;
 
-array<array<int,9>,9> sudoku;
-#define mx 400000//å…¶å®ä¸ç”¨è¿™ä¹ˆå¤§åªè¦å¤§äº729*324å³å¯
+class DLX {
+private:
+	int n, m, cnt;//¾ØÕóµÄ³¤£¬¿í£¬µãµÄÊıÁ¿
+	int l[mx], r[mx], u[mx], d[mx], row[mx], col[mx];//Ã¿¸öµãµÄ×ó£¬ÓÒ£¬ÉÏÏÂ£¬ĞĞ£¬ÁĞĞÅÏ¢
+	int h[mx];//Ã¿ĞĞµÄÍ·½áµã
+	int s[mx];//Ã¿ÁĞµÄ½áµãÊı
+	int ansk[mx];//ansk[] ×°´ğ°¸£¨Ñ¡ÁËÄÄ¼¸ĞĞ£©
+	void init(int _n, int _m) {
+		n = _n, m = _m;
+		int i;
+		for (i = 0; i <= m; i++) {
+			r[i] = i + 1; l[i] = i - 1; u[i] = d[i] = i;
+		}
+		r[m] = 0;//mÓÒ±ßÊÇ0
+		l[0] = m;//0×ó±ßÊÇm
+		memset(h, -1, sizeof(h));
+		memset(s, 0, sizeof(s));
+		cnt = m + 1;//¿ªÊ¼Ê±ÓĞm¸ö½áµã£¨0½áµãºÍ¸÷ÁĞÍ·½áµã£©
+	}//³õÊ¼»¯£¬Éú³ÉÃ¿ÁĞµÄÍ·
 
-struct DLX{
-    int n,m,cnt;//çŸ©é˜µçš„é•¿ï¼Œå®½ï¼Œç‚¹çš„æ•°é‡
-    int l[mx],r[mx],u[mx],d[mx],row[mx],col[mx];//æ¯ä¸ªç‚¹çš„å·¦ï¼Œå³ï¼Œä¸Šä¸‹ï¼Œè¡Œï¼Œåˆ—ä¿¡æ¯
-    int h[mx];//æ¯è¡Œçš„å¤´ç»“ç‚¹
-    int s[mx];//æ¯åˆ—çš„ç»“ç‚¹æ•°
-    int ansk[mx];//ansk[] è£…ç­”æ¡ˆï¼ˆé€‰äº†å“ªå‡ è¡Œï¼‰
-    void init(int _n,int _m){
-        n=_n,m=_m;
-        int i;
-        for(i=0;i<=m;i++){
-            r[i]=i+1;l[i]=i-1;u[i]=d[i]=i;
-        }
-        r[m]=0;//må³è¾¹æ˜¯0
-        l[0]=m;//0å·¦è¾¹æ˜¯m
-        memset(h,-1,sizeof(h));
-        memset(s,0,sizeof(s));
-        cnt=m+1;//å¼€å§‹æ—¶æœ‰mä¸ªç»“ç‚¹ï¼ˆ0ç»“ç‚¹å’Œå„åˆ—å¤´ç»“ç‚¹ï¼‰
-    }//åˆå§‹åŒ–ï¼Œç”Ÿæˆæ¯åˆ—çš„å¤´
-    void link(int R,int C){
-        s[C]++;
-        row[cnt]=R;
-        col[cnt]=C;
-        u[cnt]=C;
-        d[cnt]=d[C];
-        u[d[C]]=cnt;
-        d[C]=cnt;
-        if(h[R]<0)h[R]=r[cnt]=l[cnt]=cnt;//è¯¥è¡Œæ²¡æœ‰åˆ«çš„ç‚¹,æŠŠç¬¬ä¸€ä¸ªåŠ å…¥çš„ç‚¹ä½œä¸ºè¯¥è¡Œçš„è¡Œå¤´ç»“ç‚¹
-        else{
-            r[cnt]=h[R];
-            l[cnt]=l[h[R]];
-            r[l[h[R]]]=cnt;
-            l[h[R]]=cnt;
-        }
-        cnt++;
-    }//åœ¨rè¡Œcåˆ—æ’å…¥ç‚¹
-    void remove(int c){
-        r[l[c]]=r[c],l[r[c]]=l[c];
-        for(int i=d[c];i!=c;i=d[i]){
-            for(int j=r[i];j!=i;j=r[j]){
-                u[d[j]]=u[j];
-                d[u[j]]=d[j];
-                s[col[j]]--;
-            }
-        }
-    }//åˆ é™¤cåˆ—å’Œcåˆ—ä¸Šæœ‰ç‚¹çš„è¡Œ
-    void resume(int c){
-        for(int i=u[c];i!=c;i=u[i]){
-            for(int j=l[i];j!=i;j=l[j]){
-                u[d[j]]=j;
-                d[u[j]]=j;
-                s[col[j]]++;
-            }
-        }
-        r[l[c]]=c;
-        l[r[c]]=c;
-    }//æ¢å¤cåˆ—å’Œcåˆ—ä¸Šæœ‰ç‚¹çš„è¡Œ
-    bool dance(int deep){
-        if(r[0]==0){
-            int x,y,v;
-            for(int i=0;i<deep;i++){
-                x=(ansk[i]-1)/9/9;
-                y=(ansk[i]-1)/9%9;
-                v=(ansk[i])%9;//æŠŠè¡Œä¿¡æ¯è½¬æ¢æˆå¯¹åº”çš„ç‚¹çš„å€¼
-                if(v==0)v=9;//é˜²æ­¢9çš„å€æ•°%9==0
-                sudoku[x][y]=v;
-            }
-            return true;//åªè¦æ‰¾ä¸€ç»„è§£
-        }
-        int c=r[0];
-        for(int i=r[0];i!=0;i=r[i])if(s[i]<s[c])c=i;//æ‰¾åˆ°ç‚¹æœ€å°‘çš„åˆ—
-        remove(c);
-        for(int i=d[c];i!=c;i=d[i]){
-            ansk[deep]=row[i];
-            for(int j=r[i];j!=i;j=r[j]) remove(col[j]);
-            if(dance(deep+1)==1)return true;//åªè¦æ‰¾ä¸€ç»„è§£
-            for(int j=l[i];j!=i;j=l[j]) resume(col[j]);
-        }
-        resume(c);
-        return false;
-    }
-}dlx;
+	void remove(int c) {
+		r[l[c]] = r[c], l[r[c]] = l[c];
+		for (int i = d[c]; i != c; i = d[i]) {
+			for (int j = r[i]; j != i; j = r[j]) {
+				u[d[j]] = u[j];
+				d[u[j]] = d[j];
+				s[col[j]]--;
+			}
+		}
+	}//É¾³ıcÁĞºÍcÁĞÉÏÓĞµãµÄĞĞ
 
+	void resume(int c) {
+		for (int i = u[c]; i != c; i = u[i]) {
+			for (int j = l[i]; j != i; j = l[j]) {
+				u[d[j]] = j;
+				d[u[j]] = j;
+				s[col[j]]++;
+			}
+		}
+		r[l[c]] = c;
+		l[r[c]] = c;
+	} //»Ö¸´cÁĞºÍcÁĞÉÏÓĞµãµÄĞĞ
 
-void SolveByDLXRandom(){
-    array<int, 9> numbers = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-    random_device rd;
-    mt19937 g(rd());
-    shuffle(numbers.begin(), numbers.end(), g);
+public:
+	DLX() {
+		init(729, 324);
+	}
 
-    dlx.init(729,324);
-    //729:
-    //9^4ç§æƒ…å†µå¯¹åº”9^4è¡Œ;
-    //324:
-    //å¯¹åº”æ•°ç‹¬çš„è§„åˆ™:æ¯ä¸ªæ ¼å­ï¼Œæ¯è¡Œï¼Œæ¯åˆ—ï¼Œæ¯ä¸ªä¹å®«åªèƒ½å¡«1~9å„ä¸€æ¬¡
-    //å¯¹äºç¬¬måˆ—ï¼š
-    //è‹¥måœ¨[1,81]è¡¨ç¤ºåœ¨(m/9ï¼Œm%9)å¡«æ•°
-    //è‹¥måœ¨[81*1,81*2]åœ¨ç¬¬1+ï¼ˆm-81ï¼‰/9è¡Œå¡«1+ï¼ˆm-81ï¼‰%9
-    //è‹¥måœ¨[81*2,81*3]åœ¨ç¬¬1+ï¼ˆm-81*2ï¼‰/9åˆ—å¡«1+ï¼ˆm-81*2ï¼‰%9
-    //è‹¥måœ¨[81*3,81*4]åœ¨ç¬¬1+ï¼ˆm-81*3ï¼‰/9å®«å¡«1+ï¼ˆm-81*3ï¼‰%9
-    int x;
-    int o;
-    for(int i=0;i<=8;i++){
-        for(int j=0;j<=8;j++){
-            x = sudoku[i][j];
-            for(auto k:numbers){
-                if(x!=k&&x!=0)continue;//å·²ç»å¡«å¥½çš„ç‚¹å°±ä¸ç”¨è€ƒè™‘äº†
-                o=i*9*9+j*9+k;
-                dlx.link(o,i*9+j+1);
-                dlx.link(o,i*9+81+k);
-                dlx.link(o,j*9+81*2+k);
-                dlx.link(o,81*3+(i/3*3+j/3)*9+k);//æŠŠç‚¹å¯¹åº”æˆè¡Œï¼ˆé›†åˆï¼‰
-            }
-        }
-    }
-    dlx.dance(0);
-}
+	void link(int R, int C) {
+		s[C]++;
+		row[cnt] = R;
+		col[cnt] = C;
+		u[cnt] = C;
+		d[cnt] = d[C];
+		u[d[C]] = cnt;
+		d[C] = cnt;
+		if (h[R] < 0) h[R] = r[cnt] = l[cnt] = cnt;//¸ÃĞĞÃ»ÓĞ±ğµÄµã,°ÑµÚÒ»¸ö¼ÓÈëµÄµã×÷Îª¸ÃĞĞµÄĞĞÍ·½áµã
+		else {
+			r[cnt] = h[R];
+			l[cnt] = l[h[R]];
+			r[l[h[R]]] = cnt;
+			l[h[R]] = cnt;
+		}
+		cnt++;
+	}//ÔÚrĞĞcÁĞ²åÈëµã
 
-void CreateASudoku() {
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<> distrib1(1, 9);
-    uniform_int_distribution<> distrib2(81 - 60, 81 - 5);
-    int x, y;
-    SolveByDLXRandom();
-    int lim = distrib2(gen);
-    cout << "Sudoku with " << lim << " missing values" << endl;
-    for (int i = 0; i < lim; ++i) {
-        x = distrib1(gen) - 1;
-        y = distrib1(gen) - 1;
-        if (sudoku[x][y]) {
-            sudoku[x][y] = 0;
-        }
-        else {
-            --i;
-            continue;
-        }
-    }
-}
-
-void displayBoard() {
-    for (int i = 0; i < 9; ++i) {
-        if (!(i % 3)) cout << "-----------------------------------" << endl;
-        for (int j = 0; j < 9; ++j) {
-            if (!(j % 3)) cout << "| ";
-            if(sudoku[i][j] == 0) cout << "_" << "  ";
-            else cout << sudoku[i][j] << "  ";
-        }
-        cout << " |" << endl;
-    }
-    cout << "-----------------------------------" << endl;
-    //cout << "b" << endl;
-}
-#endif //SUDOKU_DANCINGLINKS_H
+	bool dance(int deep, array<array <int, 9>, 9> &sudoku) {
+		if (r[0] == 0) {
+			int x, y, v;
+			for (int i = 0; i < deep; i++) {
+				x = (ansk[i] - 1) / 9 / 9;
+				y = (ansk[i] - 1) / 9 % 9;
+				v = (ansk[i]) % 9;//°ÑĞĞĞÅÏ¢×ª»»³É¶ÔÓ¦µÄµãµÄÖµ
+				if (v == 0)v = 9;//·ÀÖ¹9µÄ±¶Êı%9==0
+				sudoku[x][y] = v;
+			}
+			return true;//Ö»ÒªÕÒÒ»×é½â
+		}
+		int c = r[0];
+		for (int i = r[0]; i != 0; i = r[i])if (s[i] < s[c])c = i;//ÕÒµ½µã×îÉÙµÄÁĞ
+		remove(c);
+		for (int i = d[c]; i != c; i = d[i]) {
+			ansk[deep] = row[i];
+			for (int j = r[i]; j != i; j = r[j]) remove(col[j]);
+			if (dance(deep + 1, sudoku)) return true;//Ö»ÒªÕÒÒ»×é½â
+			for (int j = l[i]; j != i; j = l[j]) resume(col[j]);
+		}
+		resume(c);
+		return false;
+	}
+};
+#endif SUDOKU_DANCINGLINKS_H

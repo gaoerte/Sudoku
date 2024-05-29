@@ -6,28 +6,29 @@ Sudoku::Sudoku(int min, int max) : _min(min), _max(max)
 	col.resize(9);
 	sec.resize(9);
 	count = 0;
+	dancer = new DLX();
 	cout << "创造一个数独：" << endl;
-	//CreateASudoku();
-	fillSudoku(0, 7, 9);
-	fillSudoku(1, 6, 5);
-	fillSudoku(1, 4, 7);
-	fillSudoku(3, 1, 5);
-	fillSudoku(4, 1, 7);
-	fillSudoku(5, 6, 3);
-	fillSudoku(5, 7, 7);
-	fillSudoku(6, 0, 2);
-	fillSudoku(6, 2, 7);
-	fillSudoku(6, 3, 4);
-	fillSudoku(6, 5, 9);
-	fillSudoku(6, 7, 6);
-	fillSudoku(6, 8, 5);
-	fillSudoku(7, 1, 6);
-	fillSudoku(7, 3, 3);
-	fillSudoku(7, 7, 1);
-	fillSudoku(7, 8, 4);
-	fillSudoku(8, 0, 1);
-	fillSudoku(8, 4, 8);
-	fillSudoku(8, 8, 9);
+	CreateASudoku();
+	//fillSudoku(0, 7, 9);
+	//fillSudoku(1, 6, 5);
+	//fillSudoku(1, 4, 7);
+	//fillSudoku(3, 1, 5);
+	//fillSudoku(4, 1, 7);
+	//fillSudoku(5, 6, 3);
+	//fillSudoku(5, 7, 7);
+	//fillSudoku(6, 0, 2);
+	//fillSudoku(6, 2, 7);
+	//fillSudoku(6, 3, 4);
+	//fillSudoku(6, 5, 9);
+	//fillSudoku(6, 7, 6);
+	//fillSudoku(6, 8, 5);
+	//fillSudoku(7, 1, 6);
+	//fillSudoku(7, 3, 3);
+	//fillSudoku(7, 7, 1);
+	//fillSudoku(7, 8, 4);
+	//fillSudoku(8, 0, 1);
+	//fillSudoku(8, 4, 8);
+	//fillSudoku(8, 8, 9);
 	displayBoard();
 }
 
@@ -86,20 +87,53 @@ void Sudoku::CreateASudoku()
 	dfs(0, 0);
 	int lim = distrib2(gen);
 	cout << "Sudoku with " << lim << " missing values" << endl;
+	array<int, 81> numbers;
+	for (int i = 0; i < 81; i++) {
+		numbers[i] = i;
+	}
+	mt19937 g(rd());
+	shuffle(numbers.begin(), numbers.end(), g);
 	for (int i = 0; i < lim; ++i) {
-		x = distrib1(gen) - 1;
-		y = distrib1(gen) - 1;
-		if (sudoku[x][y]) {
-			sudoku[x][y] = 0;
-		}
-		else {
-			--i;
-			continue;
-		}
+		x = numbers[i] / 9;
+		y = numbers[i] % 9;
+		sudoku[x][y] = 0;
 	}
 	auto end = chrono::high_resolution_clock::now();
 	chrono::duration<double> elapsed = end - start;
 	cout << "Creation Elapsed time: " << elapsed.count() << " seconds." << endl;
+}
+
+bool Sudoku::SolveByDLXRandom()
+{
+	array<int, 9> numbers = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+	random_device rd;
+	mt19937 g(rd());
+	shuffle(numbers.begin(), numbers.end(), g);
+	//729:
+	//9^4种情况对应9^4行;
+	//324:
+	//对应数独的规则:每个格子，每行，每列，每个九宫只能填1~9各一次
+	//对于第m列：
+	//若m在[1,81]表示在(m/9，m%9)填数
+	//若m在[81*1,81*2]在第1+（m-81）/9行填1+（m-81）%9
+	//若m在[81*2,81*3]在第1+（m-81*2）/9列填1+（m-81*2）%9
+	//若m在[81*3,81*4]在第1+（m-81*3）/9宫填1+（m-81*3）%9
+	int x;
+	int o;
+	for (int i = 0; i <= 8; i++) {
+		for (int j = 0; j <= 8; j++) {
+			x = sudoku[i][j];
+			for (auto k : numbers) {
+				if (x != k && x != 0)continue;//已经填好的点就不用考虑了
+				o = i * 9 * 9 + j * 9 + k;
+				dancer->link(o, i * 9 + j + 1);
+				dancer->link(o, i * 9 + 81 + k);
+				dancer->link(o, j * 9 + 81 * 2 + k);
+				dancer->link(o, 81 * 3 + (i / 3 * 3 + j / 3) * 9 + k);//把点对应成行（集合）
+			}
+		}
+	}
+	return dancer->dance(0, sudoku);
 }
 
 void Sudoku::displayBoard()
@@ -144,7 +178,7 @@ bool Sudoku::solvedfs(int x, int y) {
 }
 
 bool Sudoku::solveset(int x, int y) {
-	if (++count > 1000000) {
+	if (++count > 500000) {
 		flag = 2;
 		return false;
 	}
@@ -188,7 +222,8 @@ bool Sudoku::solve()
 	cout << "其中一个解为：" << endl;
 	auto start = chrono::high_resolution_clock::now();
 	//bool unsolved = !solvedfs(0, 0);
-	bool unsolved = !solveset(0, 0);
+	//bool unsolved = !solveset(0, 0);
+	bool unsolved = !SolveByDLXRandom();
 	auto end = chrono::high_resolution_clock::now();
 	chrono::duration<double> elapsed = end - start;
 	cout << "Solving Elapsed time: " << elapsed.count() << " seconds." << endl;
@@ -199,6 +234,11 @@ bool Sudoku::solve()
 	}
 	flag = 1;
 	return true;
+}
+
+Sudoku::~Sudoku()
+{
+	delete dancer;
 }
 
 
