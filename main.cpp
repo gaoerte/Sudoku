@@ -1,12 +1,51 @@
-#include "DancingLinks.h"
+#include "Sudoku.h"
+
+int runMany() {
+	int counts[6] = { 0 };
+	auto start = chrono::high_resolution_clock::now();
+	for (int i = 0; i < 100; i++) {
+		Sudoku s;
+		if (!s.solve()) {
+			//system("pause");
+			counts[5]++;
+		};
+		if (s.time < 0.01) {
+			counts[0]++;
+		}
+		else if (s.time < 0.1) {
+			counts[1]++;
+		}
+		else if (s.time < 1.0) {
+			counts[2]++;
+		}
+		else if (s.time < 5.0) {
+			counts[3]++;
+		}
+		else {
+			counts[4]++;
+		}
+	}
+	auto end = chrono::high_resolution_clock::now();
+	chrono::duration<double> elapsed = end - start;
+	cout << "Total Elapsed time: " << elapsed.count() << " seconds." << endl;
+	cout << "Under 0.01s: " << counts[0] << endl;
+	cout << "Under 0.1s: " << counts[1] << endl;
+	cout << "Under 1s: " << counts[2] << endl;
+	cout << "Under 5s: " << counts[3] << endl;
+	cout << "Over 5s: " << counts[4] << endl;
+	cout << "Unsolved: " << counts[5] << endl;
+	return 0;
+}
+
+int solveOne() {
+	Sudoku s;
+	cout << s.solve();
+	return 0;
+}
 
 int main() {
-    cout << "创造一个数独:" << endl;
-    CreateASudoku();
-    displayBoard();
-    cout << "其中一个解为:" << endl;
-    SolveByDLXRandom();
-    displayBoard();
+	solveOne();
+	//runMany();
     return 0;
 }
 
